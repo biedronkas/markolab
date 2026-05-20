@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>markoLAB — Marketing & Communication by Monika Chrostek</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f4f1ec;
+    --off-white: #e8e3dc;
+    --accent: #c8b89a;
+    --accent-dim: rgba(200,184,154,0.15);
+    --mid: #1a1a1a;
+    --line: rgba(244,241,236,0.12);
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CURSOR */
+  .cursor {
+    position: fixed;
+    top: 0; left: 0;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width .2s, height .2s, background .2s;
+  }
+  .cursor-ring {
+    position: fixed;
+    top: 0; left: 0;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(200,184,154,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: width .4s cubic-bezier(.25,.46,.45,.94), height .4s, opacity .3s;
+  }
+  body:has(a:hover) .cursor-ring,
+  body:has(button:hover) .cursor-ring {
+    width: 60px; height: 60px;
+    opacity: 0.4;
+  }
+
+  /* CANVAS */
+  #network-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 60px;
+    border-bottom: 1px solid transparent;
+    transition: border-color .3s, backdrop-filter .3s, background .3s;
+  }
+  nav.scrolled {
+    border-color: var(--line);
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,10,0.7);
+  }
+  .logo {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .logo span {
+    color: var(--accent);
+  }
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 44px;
+  }
+  nav ul a {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: rgba(244,241,236,0.6);
+    transition: color .2s;
+    cursor: none;
+  }
+  nav ul a:hover { color: var(--white); }
+  .nav-cta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent) !important;
+    border: 1px solid rgba(200,184,154,0.4);
+    padding: 8px 20px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background .2s, color .2s !important;
+    cursor: none;
+  }
+  .nav-cta:hover {
+    background: var(--accent);
+    color: var(--black) !important;
+  }
+
+  /* SECTIONS */
+  section { position: relative; z-index: 1; }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 60px 80px;
+  }
+  .hero-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp .6s .3s forwards;
+  }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(60px, 8vw, 120px);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    max-width: 900px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeUp .8s .5s forwards;
+  }
+  .hero-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .hero-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 60px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp .6s .9s forwards;
+  }
+  .hero-desc {
+    max-width: 380px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: rgba(244,241,236,0.65);
+    font-weight: 300;
+  }
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+  }
+  .stat-item {
+    text-align: right;
+  }
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 44px;
+    font-weight: 300;
+    color: var(--white);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(244,241,236,0.4);
+    margin-top: 6px;
+  }
+  .scroll-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeIn 1s 1.5s forwards;
+  }
+  .scroll-hint span {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(244,241,236,0.3);
+    writing-mode: vertical-rl;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+    animation: scrollAnim 2s ease-in-out 2s infinite;
+  }
+
+  /* DIVIDER */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--line);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ABOUT / MISSION */
+  #mission {
+    padding: 140px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 80px;
+    align-items: start;
+  }
+  .section-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .section-tag::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+  .mission-left h2 {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 5vw, 70px);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .mission-left h2 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .mission-right {
+    padding-top: 80px;
+  }
+  .mission-right p {
+    font-size: 16px;
+    line-height: 1.85;
+    color: rgba(244,241,236,0.7);
+    font-weight: 300;
+    margin-bottom: 24px;
+  }
+  .mission-right p strong {
+    color: var(--white);
+    font-weight: 500;
+  }
+  .mission-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 32px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    cursor: none;
+    transition: gap .3s;
+  }
+  .mission-cta::after {
+    content: '→';
+    font-size: 16px;
+    transition: transform .3s;
+  }
+  .mission-cta:hover { gap: 24px; }
+  .mission-cta:hover::after { transform: translateX(4px); }
+
+  /* SERVICES */
+  #services {
+    padding: 140px 60px;
+    background: var(--mid);
+  }
+  #services .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 80px;
+  }
+  #services h2 {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 5vw, 64px);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--line);
+  }
+  .service-card {
+    background: var(--mid);
+    padding: 48px 36px;
+    position: relative;
+    overflow: hidden;
+    transition: background .3s;
+    cursor: none;
+  }
+  .service-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .4s cubic-bezier(.25,.46,.45,.94);
+  }
+  .service-card:hover { background: rgba(200,184,154,0.05); }
+  .service-card:hover::before { transform: scaleX(1); }
+  .service-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(244,241,236,0.25);
+    letter-spacing: 0.1em;
+    margin-bottom: 32px;
+  }
+  .service-icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 24px;
+    opacity: 0.6;
+  }
+  .service-name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+  .service-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(244,241,236,0.5);
+    font-weight: 300;
+  }
+
+  /* APPROACH */
+  #approach {
+    padding: 140px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+  }
+  .approach-block {
+    background: var(--black);
+    padding: 80px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .approach-block::after {
+    content: attr(data-num);
+    position: absolute;
+    top: -20px;
+    right: 20px;
+    font-family: var(--font-display);
+    font-size: 160px;
+    font-weight: 300;
+    color: rgba(200,184,154,0.04);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+  .approach-block h3 {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+  }
+  .approach-block p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: rgba(244,241,236,0.55);
+    font-weight: 300;
+    max-width: 280px;
+  }
+  .approach-block .step-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 28px;
+  }
+
+  /* FOUNDER */
+  #founder {
+    padding: 140px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 100px;
+    align-items: center;
+  }
+  .founder-image-wrap {
+    position: relative;
+  }
+  .founder-image-wrap::before {
+    content: '';
+    position: absolute;
+    top: -20px; left: -20px;
+    right: 20px; bottom: 20px;
+    border: 1px solid var(--line);
+    z-index: 0;
+  }
+  .founder-image-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to bottom, transparent 60%, rgba(10,10,10,0.5));
+    z-index: 2;
+  }
+  .founder-img {
+    width: 100%;
+    aspect-ratio: 4/5;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    position: relative;
+    z-index: 1;
+    filter: grayscale(30%);
+  }
+  .founder-content {}
+  .founder-content .section-tag { margin-bottom: 28px; }
+  .founder-content h2 {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 4vw, 58px);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .founder-content h2 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .founder-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(244,241,236,0.4);
+    margin-bottom: 40px;
+  }
+  .founder-bio {
+    font-size: 15px;
+    line-height: 1.85;
+    color: rgba(244,241,236,0.65);
+    font-weight: 300;
+    margin-bottom: 48px;
+  }
+  .founder-bio strong { color: var(--white); font-weight: 500; }
+  .founder-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .metric-box {
+    border: 1px solid var(--line);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .3s;
+  }
+  .metric-box:hover { border-color: rgba(200,184,154,0.3); }
+  .metric-box .m-num {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .metric-box .m-label {
+    font-size: 12px;
+    color: rgba(244,241,236,0.5);
+    line-height: 1.5;
+    font-weight: 300;
+  }
+
+  /* TESTIMONIAL MARQUEE BAND */
+  .marquee-band {
+    overflow: hidden;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 20px 0;
+    background: var(--mid);
+  }
+  .marquee-track {
+    display: flex;
+    gap: 80px;
+    animation: marquee 30s linear infinite;
+    white-space: nowrap;
+    width: max-content;
+  }
+  .marquee-item {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 300;
+    font-style: italic;
+    color: rgba(244,241,236,0.3);
+    flex-shrink: 0;
+  }
+  .marquee-dot {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  /* CONTACT */
+  #contact {
+    padding: 160px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+  }
+  #contact::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(200,184,154,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  #contact .section-tag { margin-bottom: 32px; justify-content: center; }
+  #contact .section-tag::before { display: none; }
+  #contact h2 {
+    font-family: var(--font-display);
+    font-size: clamp(50px, 8vw, 110px);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 48px;
+    max-width: 800px;
+  }
+  #contact h2 em { font-style: italic; color: var(--accent); }
+  .contact-links {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .contact-link-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--accent);
+    color: var(--black);
+    padding: 18px 40px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: none;
+    transition: background .2s, transform .2s;
+    font-weight: 700;
+  }
+  .contact-link-primary:hover {
+    background: var(--off-white);
+    transform: translateY(-2px);
+  }
+  .contact-link-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--line);
+    color: rgba(244,241,236,0.7);
+    padding: 18px 40px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: none;
+    transition: border-color .2s, color .2s;
+  }
+  .contact-link-secondary:hover {
+    border-color: rgba(244,241,236,0.4);
+    color: var(--white);
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 40px 60px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .footer-logo {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .footer-logo span { color: var(--accent); }
+  .footer-copy {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: rgba(244,241,236,0.25);
+    text-transform: uppercase;
+  }
+  .footer-contact {
+    font-size: 13px;
+    color: rgba(244,241,236,0.4);
+    text-align: right;
+    line-height: 1.6;
+  }
+  .footer-contact a {
+    color: rgba(200,184,154,0.6);
+    text-decoration: none;
+    transition: color .2s;
+    cursor: none;
+  }
+  .footer-contact a:hover { color: var(--accent); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+  @keyframes scrollAnim {
+    0%, 100% { transform: scaleY(1); transform-origin: top; opacity: 1; }
+    50% { transform: scaleY(0.3); opacity: 0.3; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity .8s cubic-bezier(.25,.46,.45,.94), transform .8s cubic-bezier(.25,.46,.45,.94);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: .1s; }
+  .reveal-delay-2 { transition-delay: .2s; }
+  .reveal-delay-3 { transition-delay: .3s; }
+  .reveal-delay-4 { transition-delay: .4s; }
+
+  /* LINE ACCENT */
+  .accent-line {
+    width: 60px;
+    height: 1px;
+    background: var(--accent);
+    margin: 32px 0;
+  }
+
+  @media (max-width: 1024px) {
+    nav { padding: 24px 30px; }
+    nav ul { display: none; }
+    #hero { padding: 0 30px 60px; }
+    .hero-bottom { flex-direction: column; align-items: flex-start; gap: 40px; }
+    .hero-stats { gap: 32px; }
+    #mission { grid-template-columns: 1fr; padding: 80px 30px; }
+    #services { padding: 80px 30px; }
+    .services-grid { grid-template-columns: repeat(2, 1fr); }
+    #approach { grid-template-columns: 1fr; padding: 0; }
+    #founder { grid-template-columns: 1fr; padding: 80px 30px; gap: 60px; }
+    #contact { padding: 100px 30px; }
+    footer { flex-direction: column; gap: 20px; text-align: center; padding: 30px; }
+    .footer-contact { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<canvas id="network-canvas"></canvas>
+
+<nav id="navbar">
+  <a href="#" class="logo">marko<span>LAB</span></a>
+  <ul>
+    <li><a href="#mission">About</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#approach">Approach</a></li>
+    <li><a href="#founder">Founder</a></li>
+    <li><a href="#contact" class="nav-cta">Get in Touch</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-label">B2B Marketing Consultancy — Warsaw / Global</div>
+  <h1 class="hero-title">
+    Unify your <em>brand.</em><br>Amplify your <em>impact.</em>
+  </h1>
+  <div class="hero-bottom">
+    <p class="hero-desc">
+      Strategic marketing consultancy for global financial, legal, and professional services firms navigating growth, change, and transformation.
+    </p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">15+</div>
+        <div class="stat-label">Years experience</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">20</div>
+        <div class="stat-label">Rebranding projects</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">4</div>
+        <div class="stat-label">Continents</div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- MARQUEE -->
+<div class="marquee-band">
+  <div class="marquee-track">
+    <span class="marquee-item">Marketing Strategy <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Post M&A Integration <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Change Management <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Rebranding <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Employer Branding <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Brand Audit <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Marketing Strategy <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Post M&A Integration <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Change Management <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Rebranding <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Employer Branding <span class="marquee-dot">◆</span></span>
+    <span class="marquee-item">Brand Audit <span class="marquee-dot">◆</span></span>
+  </div>
+</div>
+
+<!-- MISSION -->
+<section id="mission">
+  <div class="mission-left reveal">
+    <div class="section-tag">Our Purpose</div>
+    <h2>Built to <em>unify<br>brands</em><br>everywhere.</h2>
+    <div class="accent-line"></div>
+  </div>
+  <div class="mission-right reveal reveal-delay-2">
+    <p>In the world of disruption — growing regulatory changes, intensified M&A, and constant restructuring — keeping pace with modern marketing is harder than ever.</p>
+    <p>markoLAB was founded to help <strong>professional services firms</strong> win new business, protect their reputation, and increase visibility. Because knowledge-based businesses can no longer rely on golf club contacts to build a steady stream of clients.</p>
+    <p>We diagnose how you drive brand awareness, streamline due diligence, simplify rebranding, and maintain steady communication during times of change.</p>
+    <a href="#services" class="mission-cta">Explore our services</a>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-header reveal">
+    <div>
+      <div class="section-tag">What we do</div>
+      <h2>Our<br><em>Specialties</em></h2>
+    </div>
+  </div>
+  <div class="services-grid">
+    <div class="service-card reveal">
+      <div class="service-num">01</div>
+      <svg class="service-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 28L13 17L20 24L29 10" stroke="#c8b89a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="29" cy="10" r="2" fill="#c8b89a"/>
+        <circle cx="4" cy="28" r="2" fill="#c8b89a"/>
+      </svg>
+      <div class="service-name">Marketing Strategy</div>
+      <div class="service-desc">Comprehensive strategies that align marketing with business objectives and drive measurable growth.</div>
+    </div>
+    <div class="service-card reveal reveal-delay-1">
+      <div class="service-num">02</div>
+      <svg class="service-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="18" r="6" stroke="#c8b89a" stroke-width="1.5"/>
+        <circle cx="26" cy="18" r="6" stroke="#c8b89a" stroke-width="1.5"/>
+        <path d="M16 18H20" stroke="#c8b89a" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="service-name">Post M&A Integration</div>
+      <div class="service-desc">Seamless brand and communication integration following mergers, acquisitions, and restructuring.</div>
+    </div>
+    <div class="service-card reveal reveal-delay-2">
+      <div class="service-num">03</div>
+      <svg class="service-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6v6M18 24v6M6 18h6M24 18h6" stroke="#c8b89a" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="18" cy="18" r="5" stroke="#c8b89a" stroke-width="1.5"/>
+      </svg>
+      <div class="service-name">Change Management</div>
+      <div class="service-desc">Maintain cohesive, confident communication through periods of organisational transformation.</div>
+    </div>
+    <div class="service-card reveal reveal-delay-3">
+      <div class="service-num">04</div>
+      <svg class="service-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="14" width="24" height="14" rx="1" stroke="#c8b89a" stroke-width="1.5"/>
+        <path d="M12 14V10a6 6 0 0112 0v4" stroke="#c8b89a" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="service-name">Rebranding</div>
+      <div class="service-desc">20+ successful rebranding projects across 4 continents — simplifying complexity into clarity.</div>
+    </div>
+    <div class="service-card reveal reveal-delay-4">
+      <div class="service-num">05</div>
+      <svg class="service-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="18" cy="12" r="5" stroke="#c8b89a" stroke-width="1.5"/>
+        <path d="M8 30c0-5.523 4.477-10 10-10s10 4.477 10 10" stroke="#c8b89a" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="service-name">Employer Branding</div>
+      <div class="service-desc">Attract and retain top talent by building an authentic, compelling employer brand narrative.</div>
+    </div>
+  </div>
+</section>
+
+<!-- APPROACH -->
+<section id="approach">
+  <div class="approach-block reveal" data-num="A">
+    <div class="step-tag">Step 01</div>
+    <h3>Audit</h3>
+    <p>We start by diagnosing the current state of your brand — across platforms, touchpoints, and audiences — to identify gaps and opportunities.</p>
+  </div>
+  <div class="approach-block reveal reveal-delay-1" data-num="B">
+    <div class="step-tag">Step 02</div>
+    <h3>Analysis</h3>
+    <p>Deep-dive analysis of competitive positioning, brand consistency, and communication effectiveness to inform strategic decisions.</p>
+  </div>
+  <div class="approach-block reveal reveal-delay-2" data-num="C">
+    <div class="step-tag">Step 03</div>
+    <h3>Advisory</h3>
+    <p>Clear, actionable recommendations delivered with precision. Implementation support available on a project-by-project basis.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FOUNDER -->
+<section id="founder">
+  <div class="founder-image-wrap reveal">
+    <img src="1664290943521.jpeg" alt="Monika Chrostek" class="founder-img" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22500%22><rect fill=%22%231a1a1a%22 width=%22400%22 height=%22500%22/><text fill=%22%23c8b89a%22 font-size=%2240%22 x=%22200%22 y=%22250%22 text-anchor=%22middle%22>MC</text></svg>'">
+  </div>
+  <div class="founder-content reveal reveal-delay-2">
+    <div class="section-tag">The Founder</div>
+    <h2>Monika<br><em>Chrostek</em></h2>
+    <div class="founder-title">B2B Marketing Consultant & Strategist</div>
+    <p class="founder-bio">
+      A marketing and communication professional with <strong>more than 15 years' experience</strong> developing strategies and campaigns for multinational companies. Former regional and global lead at <strong>VISTRA</strong> and <strong>ZEDRA</strong>.
+    </p>
+    <p class="founder-bio">
+      Entrepreneurial, results-oriented, and deeply experienced in professional services marketing — from lead generation to brand visibility, M&A integration to rebranding. After years in corporate, she founded markoLAB to bring that expertise directly to firms that need it.
+    </p>
+    <div class="founder-metrics">
+      <div class="metric-box reveal reveal-delay-1">
+        <div class="m-num">Top 3</div>
+        <div class="m-label">Corporate services provider introduced into CEE</div>
+      </div>
+      <div class="metric-box reveal reveal-delay-2">
+        <div class="m-num">20+</div>
+        <div class="m-label">Rebranding projects across 4 continents</div>
+      </div>
+      <div class="metric-box reveal reveal-delay-3">
+        <div class="m-num">Global</div>
+        <div class="m-label">Brand presence built in US, UK, Europe & Asia</div>
+      </div>
+      <div class="metric-box reveal reveal-delay-4">
+        <div class="m-num">15+</div>
+        <div class="m-label">Years in financial & professional services</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-tag">Work Together</div>
+  <h2>Let's <em>build<br>something</em><br>remarkable.</h2>
+  <div class="contact-links reveal">
+    <a href="mailto:Monika.Chrostek@gmail.com" class="contact-link-primary">
+      Send an Email
+    </a>
+    <a href="tel:+48604208139" class="contact-link-secondary">
+      +48 604 208 139
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">marko<span>LAB</span> · Marketing & Komunikacja</div>
+  <div class="footer-copy">© 2025 markoLAB by Monika Chrostek</div>
+  <div class="footer-contact">
+    <a href="mailto:Monika.Chrostek@gmail.com">Monika.Chrostek@gmail.com</a><br>
+    <a href="tel:+48604208139">+48 604 208 139</a>
+  </div>
+</footer>
+
+<script>
+// CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animCursor() {
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+// NAVBAR SCROLL
+const nav = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+// NETWORK CANVAS
+const canvas = document.getElementById('network-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, pts;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function initPts() {
+  pts = Array.from({length: 60}, () => ({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    r: Math.random() * 1.5 + 0.5
+  }));
+}
+
+function drawNetwork() {
+  ctx.clearRect(0, 0, W, H);
+  pts.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0 || p.x > W) p.vx *= -1;
+    if (p.y < 0 || p.y > H) p.vy *= -1;
+  });
+  for (let i = 0; i < pts.length; i++) {
+    for (let j = i + 1; j < pts.length; j++) {
+      const dx = pts[i].x - pts[j].x;
+      const dy = pts[i].y - pts[j].y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < 160) {
+        ctx.beginPath();
+        ctx.moveTo(pts[i].x, pts[i].y);
+        ctx.lineTo(pts[j].x, pts[j].y);
+        ctx.strokeStyle = `rgba(200,184,154,${(1 - d/160) * 0.25})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+  pts.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(200,184,154,0.5)';
+    ctx.fill();
+  });
+  requestAnimationFrame(drawNetwork);
+}
+
+window.addEventListener('resize', () => { resize(); initPts(); });
+resize(); initPts(); drawNetwork();
+
+// REVEAL ON SCROLL
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+revealEls.forEach(el => io.observe(el));
+</script>
+</body>
+</html>
