@@ -129,8 +129,6 @@ summary>[aria-hidden="true"],summary>b{transition:transform 180ms cubic-bezier(.
 .header nav a,.contact-links a,.footer a{transition:color 180ms ease}
 .text-link:active{transform:scale(.985)}
 @media(hover:hover) and (pointer:fine){
- .button:hover span[aria-hidden="true"],.text-link:hover span[aria-hidden="true"],.nav-contact:hover span[aria-hidden="true"]{transform:translate(3px,-2px)}
- .text-link:hover{background:rgba(52,136,123,.12);border-color:#34887B}
  .contact-links a:hover,.footer a:hover{color:var(--ink)}
 }
 @media(prefers-reduced-motion:reduce){
@@ -160,6 +158,33 @@ summary>[aria-hidden="true"],summary>b{transition:transform 180ms cubic-bezier(.
  78%{opacity:1}
  100%{opacity:0;transform:translateX(65%)}
 }
+
+/* The entire step is the hover target; fill sits directly behind all content. */
+.steps li{transition:background-color 320ms ease}
+.steps li>p,.steps li>.step-label{transition:color 240ms ease}
+.steps h3{width:fit-content;max-width:100%}
+@media(hover:hover) and (pointer:fine){
+ .steps li:hover{background:#465549}
+ .steps li:hover>p,.steps li:hover>.step-label{color:var(--ink)}
+}
+@media(prefers-reduced-motion:reduce){.steps li,.steps li>p,.steps li>.step-label{transition:none}}
+
+/* Original Get in Touch interaction, adapted to the current green palette. */
+.header .nav-contact,.button.light,.text-link{background:transparent;border:1px solid var(--mint);color:var(--ink);transition:background-color 200ms ease,color 200ms ease,border-color 200ms ease}
+@media(hover:hover) and (pointer:fine){
+ .header .nav-contact:hover,.button.light:hover,.text-link:hover{background:var(--mint);border-color:var(--mint);color:var(--ink)}
+}
+.header .nav-contact:focus-visible,.button.light:focus-visible,.text-link:focus-visible{background:var(--mint);color:var(--ink);outline:2px solid var(--ink);outline-offset:4px}
+.hero-bottom .button.light{background:var(--mint);border-color:var(--mint);color:#fff}
+.project-copy summary>[data-i18n]{display:inline-block;transition:transform 220ms cubic-bezier(.22,1,.36,1),color 200ms ease}
+@media(hover:hover) and (pointer:fine){
+ .hero-bottom .button.light:hover{background:transparent;border-color:var(--mint);color:#fff}
+ .project-copy summary:hover>[data-i18n]{transform:translateY(-2px);color:#34887B}
+}
+.hero-bottom .button.light:focus-visible{background:transparent;color:#fff}
+.contact-links a,.contact-links a:hover,.contact-links a:focus-visible{color:var(--mint)}
+@media(prefers-reduced-motion:reduce){.header .nav-contact,.button.light,.text-link{transition:none}}
+@media(prefers-reduced-motion:reduce){.project-copy summary:hover>[data-i18n]{transform:none}}
 </style></head>
 <body>
 <a class="skip" href="#main"><span data-i18n="t000">Przejdź do treści</span></a>
@@ -236,43 +261,76 @@ setLanguage(['pl','en'].includes(requestedLanguage)?requestedLanguage:savedLangu
 
   const seen = new WeakSet();
   const active = new Set();
+  const headingAnimations = new WeakMap();
   const easing = 'cubic-bezier(0.22, 1, 0.36, 1)';
   let observer;
 
-  function enter(element, delay = 0, distance = 16, duration = 600) {
+  function enter(element, delay = 0, distance = 16, duration = 600, initialOpacity = 0) {
     if (seen.has(element) || reducedMotion.matches) return;
     seen.add(element);
+    if (element.matches('h1, h2, h3, h4')) headingAnimations.get(element)?.cancel();
     const animation = element.animate([
-      { opacity: 0, transform: `translateY(${distance}px)` },
+      { opacity: initialOpacity, transform: `translateY(${distance}px)` },
       { opacity: 1, transform: 'translateY(0)' }
     ], { duration, delay, easing, fill: 'backwards' });
     active.add(animation);
+    if (element.matches('h1, h2, h3, h4')) headingAnimations.set(element, animation);
     animation.finished.then(() => active.delete(animation), () => active.delete(animation));
   }
 
-  const heroItems = document.querySelectorAll('.hero-content > .eyebrow, .hero-content > h1, .hero-bottom, .hero-foot');
+  const heroItems = document.querySelectorAll('.hero-content > .eyebrow, .hero-bottom, .hero-foot');
   heroItems.forEach((element, index) => enter(element, index * 60, 12, 640));
 
   const selector = [
-    '#about > .eyebrow', '.about-content > h2', '.about-content > div', '.evidence > div',
-    '.section-top', '.projects > .project', '.event', '#services > div:first-child',
-    '.service-list > details', '#approach > .wrap > .eyebrow', '.steps > li',
-    '#founder > div', '#contact > .wrap', '.footer'
+    'h1', 'h2', 'h3', 'h4', '#about > .eyebrow', '.about-content > div', '.evidence > div',
+    '.section-top > p', '.section-top > div > .eyebrow', '.project-visual',
+    '.project-copy > p', '.project-copy > details', '.event',
+    '#services > div:first-child > p', '.service-list > details > p',
+    '#approach > .wrap > .eyebrow', '.steps > li > .step-label', '.steps > li > p',
+    '#founder > div:first-child', '#founder > div:last-child > p', '#founder .text-link',
+    '#contact > .wrap > .eyebrow', '.contact-bottom', '.contact-links', '.footer'
   ].join(', ');
 
   const delayGroups = '.projects, .steps, .evidence, .service-list';
   observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
       const element = entry.target;
+      const heading = element.matches('h1, h2, h3, h4');
+      if (!entry.isIntersecting) {
+        if (heading) seen.delete(element);
+        return;
+      }
       const parent = element.parentElement;
       const stagger = parent && parent.matches(delayGroups)
         ? Math.min(Array.from(parent.children).indexOf(element) * 55, 165) : 0;
-      enter(element, stagger);
-      observer.unobserve(element);
+      // Headings rise independently rather than inheriting an entire card's motion.
+      enter(element, heading ? 80 : stagger, heading ? 32 : 16, heading ? 900 : 600);
+      if (!heading) observer.unobserve(element);
     });
   }, { threshold: 0.1, rootMargin: '0px 0px -24px 0px' });
-  document.querySelectorAll(selector).forEach(element => observer.observe(element));
+  const targets = Array.from(document.querySelectorAll(selector))
+    .filter(element => !element.matches('.steps h3, .project-copy > h3, .service-list h3'));
+  targets.forEach(element => {
+    if (!element.matches('h1, h2, h3, h4')) observer.observe(element);
+  });
+  // Embedded fonts must be ready before the first heading entrance, including hero.
+  Promise.resolve(document.fonts?.ready).then(() => requestAnimationFrame(() => {
+    if (reducedMotion.matches) return;
+    targets.forEach(element => {
+      if (element.matches('h1, h2, h3, h4')) observer.observe(element);
+    });
+  }));
+
+  // Pointer hover makes the heading motion available even after scroll entry.
+  const precisePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  document.querySelectorAll('h1, h2, h3, h4').forEach(heading => {
+    if (heading.matches('.steps h3, .project-copy > h3, .service-list h3')) return;
+    heading.addEventListener('pointerenter', () => {
+      if (reducedMotion.matches || !precisePointer.matches) return;
+      seen.delete(heading);
+      enter(heading, 0, 8, 420, .72);
+    }, { passive: true });
+  });
 
   // Open disclosures gently for pointer interactions; keyboard actions stay immediate.
   document.querySelectorAll('details').forEach(details => {
